@@ -9,11 +9,15 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 40px;
-      max-width: 800px;
+      max-width: 100vw;
     }
 
     h1 {
       color: #2c3e50;
+	text-align: center;
+    }
+    h2 {
+	text-align: center;
     }
 
     input[type="text"] {
@@ -81,9 +85,9 @@
     <div class="spinner"></div>
     <div class="loading-text">Loading data...</div>
   </div>
-
   <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
   <h2>Provincial Treasurer's Office - Cash Division</h2>
+
   <input type="text" id="search" placeholder="Search ...">
   <ul id="sheet-data"></ul>
 
@@ -127,24 +131,27 @@ if (item.CheckDate) {
     const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based month
     dateCode = `${year}${month}`; // Format as yyMM
   }
-}
-let rawDV = item.DV;
+}let rawDV = item.DV;
 let formattedDVPart = '';
-  if (rawDV != null && !isNaN(rawDV)) {
-    formattedDVPart = parseInt(rawDV).toString().padStart(6, '0');
-  }
+if (rawDV != null && !isNaN(rawDV)) {
+  formattedDVPart = parseInt(rawDV).toString().padStart(6, '0');
+}
 
 let formattedDV = rawDV; // default fallback
-  if (item.Fund === "General Fund") {
-    formattedDV = `CK-100-${dateCode}-${formattedDVPart}`;
-  } else if (item.Fund === "SEF") {
-    formattedDV = `CK-200-${dateCode}-${formattedDVPart}`;
-  } else if (item.Fund === "Trust Fund") {
-    formattedDV = `CK-300-${dateCode}-${formattedDVPart}`;
-  } else if (item.Fund === "SHF") {
-    formattedDV = `CK-400-${dateCode}-${formattedDVPart}`;
-  }
-li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Net Amount: ${formattedAmount}<br>Status: ${item.Status}<br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
+if (item.Fund === "General Fund") {
+  formattedDV = `CK-100-${dateCode}-${formattedDVPart}`;
+} else if (item.Fund === "SEF") {
+  formattedDV = `CK-200-${dateCode}-${formattedDVPart}`;
+} else if (item.Fund === "Trust Fund") {
+  formattedDV = `CK-300-${dateCode}-${formattedDVPart}`;
+} else if (item.Fund === "SHF") {
+  formattedDV = `CK-400-${dateCode}-${formattedDVPart}`;
+}
+let statusColor = "";
+if (item.Status && ["For Release", "Released"].includes(item.Status.trim())) {
+  statusColor = "color: green; font-weight: bold;";
+}
+        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${item.Status || ""}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
       });
     }
