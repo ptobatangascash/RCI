@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Google Sheets Data Viewer</title>
+  <title>Province of Batangas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -82,21 +82,69 @@
     <div class="loading-text">Loading data...</div>
   </div>
 
-  <h1>Google Sheets Data</h1>
-
-  <input type="text" id="search" placeholder="Search by name, email, or message...">
+  <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
+  <h2>Provincial Treasurer's Office - Cash Division</h2>
+  <input type="text" id="search" placeholder="Search ...">
   <ul id="sheet-data"></ul>
 
   <script>
-    const sheetUrl = "https://script.google.com/macros/s/AKfycbyXtZRgA5BhS4pWlu36h6oz6grtYw3lBE0gNZ77rVab87lIp3lpCUT5HncNbapS2T4kpw/exec"; // <-- Replace with your Google Apps Script Web App URL
-    let fullData = [];
-
-    function renderList(data) {
+    const sheetUrl = "https://script.google.com/macros/s/AKfycbzocnJFblCXO5PhXCAZpCv-F7ItKgyqBsnVXUfK2iRuBwutO--eOhuLQzpGSb4XhhFS1w/exec"; // <-- Replace with your Google Apps Script Web App URL
+    	let fullData = [];
+	function renderList(data) {
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
+  data.sort((a, b) => {
+    // Convert CheckDate to Date objects (or fallback to 0 if invalid)
+    const dateA = a.CheckDate ? new Date(a.CheckDate) : new Date(0);
+    const dateB = b.CheckDate ? new Date(b.CheckDate) : new Date(0);
+    return dateB - dateA; // descending order
+  });
       data.forEach(item => {
         const li = document.createElement("li");
-        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${item.CheckDate}<br>Particulars: ${item.Nature}`;
+	let formattedDate = item.CheckDate;
+	if (item.CheckDate) {
+  	const date = new Date(item.CheckDate);
+  	if (!isNaN(date)) {
+    	formattedDate = new Intl.DateTimeFormat('en-US', {
+      	year: 'numeric',
+      	month: 'long',
+      	day: '2-digit'
+    	}).format(date);
+  	}
+	}
+let formattedAmount = item.Amount;
+if (item.Amount && !isNaN(item.Amount)) {
+  formattedAmount = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(Number(item.Amount));
+}
+let dateCode = '';
+if (item.CheckDate) {
+  const date = new Date(item.CheckDate);
+  if (!isNaN(date)) {
+    const year = date.getFullYear().toString().slice(2); // Get last 2 digits of year
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based month
+    dateCode = `${year}${month}`; // Format as yyMM
+  }
+}
+let rawDV = item.DV;
+let formattedDVPart = '';
+  if (rawDV != null && !isNaN(rawDV)) {
+    formattedDVPart = parseInt(rawDV).toString().padStart(6, '0');
+  }
+
+let formattedDV = rawDV; // default fallback
+  if (item.Fund === "General Fund") {
+    formattedDV = `CK-100-${dateCode}-${formattedDVPart}`;
+  } else if (item.Fund === "SEF") {
+    formattedDV = `CK-200-${dateCode}-${formattedDVPart}`;
+  } else if (item.Fund === "Trust Fund") {
+    formattedDV = `CK-300-${dateCode}-${formattedDVPart}`;
+  } else if (item.Fund === "SHF") {
+    formattedDV = `CK-400-${dateCode}-${formattedDVPart}`;
+  }
+li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Amount: ${formattedAmount}<br>Status: ${item.Status}<br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
       });
     }
@@ -133,7 +181,6 @@
     searchInput.addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
       const filtered = fullData.filter(item =>
-        (item.CheckDate && item.CheckDate.toLowerCase().includes(query)) ||
         (item.Payee && item.Payee.toLowerCase().includes(query)) ||
         (item.Nature && item.Nature.toLowerCase().includes(query))
       );
