@@ -144,7 +144,7 @@ let formattedDV = rawDV; // default fallback
   } else if (item.Fund === "SHF") {
     formattedDV = `CK-400-${dateCode}-${formattedDVPart}`;
   }
-li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Amount: ${formattedAmount}<br>Status: ${item.Status}<br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
+li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Net Amount: ${formattedAmount}<br>Status: ${item.Status}<br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
       });
     }
