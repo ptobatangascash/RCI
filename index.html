@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Sheets Data Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      max-width: 800px;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #f9f9f9;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* Splash screen styles */
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+    }
+
+    .spinner {
+      border: 6px solid #eee;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading data...</div>
+  </div>
+
+  <h1>Google Sheets Data</h1>
+
+  <input type="text" id="search" placeholder="Search by name, email, or message...">
+  <ul id="sheet-data"></ul>
+
+  <script>
+    const sheetUrl = "https://script.google.com/macros/s/AKfycbyXtZRgA5BhS4pWlu36h6oz6grtYw3lBE0gNZ77rVab87lIp3lpCUT5HncNbapS2T4kpw/exec"; // <-- Replace with your Google Apps Script Web App URL
+    let fullData = [];
+
+    function renderList(data) {
+      const list = document.getElementById("sheet-data");
+      list.innerHTML = "";
+      data.forEach(item => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${item.CheckDate}<br>Particulars: ${item.Nature}`;
+        list.appendChild(li);
+      });
+    }
+
+    // Debounce helper function
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Fetch data from Google Sheets and render list
+    fetch(sheetUrl)
+  .then(response => response.json())
+  .then(data => {
+    if (!Array.isArray(data)) {
+      throw new Error("Invalid data format received from the Google Apps Script");
+    }
+
+    fullData = data;
+    renderList(data);
+    document.getElementById("splash").style.display = "none";
+  })
+  .catch(error => {
+    console.error("Error loading sheet data:", error);
+    document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
+    document.getElementById("splash").style.display = "none";
+  });
+
+    // Search input with debounced filtering
+    const searchInput = document.getElementById("search");
+    searchInput.addEventListener("input", debounce(function () {
+      const query = this.value.toLowerCase();
+      const filtered = fullData.filter(item =>
+        (item.CheckDate && item.CheckDate.toLowerCase().includes(query)) ||
+        (item.Payee && item.Payee.toLowerCase().includes(query)) ||
+        (item.Nature && item.Nature.toLowerCase().includes(query))
+      );
+      renderList(filtered);
+    }, 300)); // 300ms debounce delay
+  </script>
+</body>
+</html>
