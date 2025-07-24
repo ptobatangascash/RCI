@@ -229,6 +229,7 @@
     searchInput.addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
       const filtered = fullData.filter(item =>
+        (item.OBR && item.OBR.toLowerCase().includes(query)) ||
         (item.Payee && item.Payee.toLowerCase().includes(query)) ||
         (item.Nature && item.Nature.toLowerCase().includes(query))
       );
