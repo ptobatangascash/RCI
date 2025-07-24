@@ -83,6 +83,12 @@
       margin-top: 20px;
       font-weight: bold;
     }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -97,7 +103,7 @@
   <h2>Provincial Treasurer's Office - Cash Division</h2>
 
   <!-- Last Update Header -->
-  <div id="last-update" class="last-update">Last Update: N/A</div>
+  <div id="last-update" class="last-update">Last Update: N/A | Download Size: N/A</div>
 
   <input type="text" id="search" placeholder="Search ...">
   <ul id="sheet-data"></ul>
@@ -105,16 +111,16 @@
   <script>
     const sheetUrl = "https://script.google.com/macros/s/AKfycbzocnJFblCXO5PhXCAZpCv-F7ItKgyqBsnVXUfK2iRuBwutO--eOhuLQzpGSb4XhhFS1w/exec"; // <-- Replace with your Google Apps Script Web App URL
     let fullData = [];
+    let downloadSize = 0; // To hold the size of the data downloaded
 
     function renderList(data) {
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
 
       data.sort((a, b) => {
-        // Convert CheckDate to Date objects (or fallback to 0 if invalid)
         const dateA = a.CheckDate ? new Date(a.CheckDate) : new Date(0);
         const dateB = b.CheckDate ? new Date(b.CheckDate) : new Date(0);
-        return dateB - dateA; // descending order
+        return dateB - dateA;
       });
 
       data.forEach(item => {
@@ -143,20 +149,17 @@
         if (item.CheckDate) {
           const date = new Date(item.CheckDate);
           if (!isNaN(date)) {
-            const year = date.getFullYear().toString().slice(2); // Get last 2 digits of year
-            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based month
-            dateCode = `${year}${month}`; // Format as yyMM
+            const year = date.getFullYear().toString().slice(2);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            dateCode = `${year}${month}`;
           }
         }
 
+        // Formatted DV (Voucher Number) - blank if not available
         let rawDV = item.DV;
-        let formattedDV = ''; // Default to an empty string
-        if (rawDV != null && !isNaN(rawDV)) {
-          formattedDV = parseInt(rawDV).toString().padStart(6, '0');
-        }
+        let formattedDV = rawDV ? parseInt(rawDV).toString().padStart(6, '0') : '';
 
-        // Apply custom formatting based on the Fund type if DV exists
-        if (formattedDV) {
+        if (formattedDV && item.Fund) {
           if (item.Fund === "General Fund") {
             formattedDV = `CK-100-${dateCode}-${formattedDV}`;
           } else if (item.Fund === "SEF") {
@@ -166,8 +169,6 @@
           } else if (item.Fund === "SHF") {
             formattedDV = `CK-400-${dateCode}-${formattedDV}`;
           }
-        } else {
-          formattedDV = '';  // If rawDV is not provided, leave it as empty string
         }
 
         let statusColor = "";
@@ -179,31 +180,26 @@
         list.appendChild(li);
       });
 
-      // Find the latest update date and display it
-      const latestDate = data.reduce((latest, item) => {
-        const currentDate = item.CheckDate ? new Date(item.CheckDate) : new Date(0);
-        return currentDate > latest ? currentDate : latest;
-      }, new Date(0));
-
+      // Static "Last Update" upon data load
       const formattedLatestDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: '2-digit'
-      }).format(latestDate);
+      }).format(new Date()); // Use current date for "Last Update"
 
-      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate}`;
+      // Update "Last Update" with the download size
+      const downloadSizeMB = formatBytes(downloadSize);
+      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate} | Download Size: ${downloadSizeMB}`;
     }
 
-    // Debounce helper function
-    function debounce(func, wait) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
-    // Fetch data from Google Sheets and render list
+    // Fetch data and calculate size when page loads
     fetch(sheetUrl)
       .then(response => response.json())
       .then(data => {
@@ -212,7 +208,14 @@
         }
 
         fullData = data;
+        
+        // Calculate and store download size only once when the data is initially loaded
+        downloadSize = new TextEncoder().encode(JSON.stringify(data)).length; // Get byte size of the JSON data
+
+        // Render the data
         renderList(data);
+
+        // Hide splash screen after data is loaded
         document.getElementById("splash").style.display = "none";
       })
       .catch(error => {
@@ -221,7 +224,7 @@
         document.getElementById("splash").style.display = "none";
       });
 
-    // Search input with debounced filtering
+    // Implement search functionality
     const searchInput = document.getElementById("search");
     searchInput.addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
@@ -231,6 +234,16 @@
       );
       renderList(filtered);
     }, 300)); // 300ms debounce delay
+
+    // Debounce helper function
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
   </script>
+
 </body>
 </html>
