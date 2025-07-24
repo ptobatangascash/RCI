@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Province of Batangas</title>
+  <title>Checks Issued</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,10 +14,10 @@
 
     h1 {
       color: #2c3e50;
-	text-align: center;
+      text-align: center;
     }
     h2 {
-	text-align: center;
+      text-align: center;
     }
 
     input[type="text"] {
@@ -76,6 +76,13 @@
       font-size: 18px;
       color: #555;
     }
+
+    .last-update {
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -85,75 +92,106 @@
     <div class="spinner"></div>
     <div class="loading-text">Loading data...</div>
   </div>
+
   <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
   <h2>Provincial Treasurer's Office - Cash Division</h2>
+
+  <!-- Last Update Header -->
+  <div id="last-update" class="last-update">Last Update: N/A</div>
 
   <input type="text" id="search" placeholder="Search ...">
   <ul id="sheet-data"></ul>
 
   <script>
     const sheetUrl = "https://script.google.com/macros/s/AKfycbzocnJFblCXO5PhXCAZpCv-F7ItKgyqBsnVXUfK2iRuBwutO--eOhuLQzpGSb4XhhFS1w/exec"; // <-- Replace with your Google Apps Script Web App URL
-    	let fullData = [];
-	function renderList(data) {
+    let fullData = [];
+
+    function renderList(data) {
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
-  data.sort((a, b) => {
-    // Convert CheckDate to Date objects (or fallback to 0 if invalid)
-    const dateA = a.CheckDate ? new Date(a.CheckDate) : new Date(0);
-    const dateB = b.CheckDate ? new Date(b.CheckDate) : new Date(0);
-    return dateB - dateA; // descending order
-  });
+
+      data.sort((a, b) => {
+        // Convert CheckDate to Date objects (or fallback to 0 if invalid)
+        const dateA = a.CheckDate ? new Date(a.CheckDate) : new Date(0);
+        const dateB = b.CheckDate ? new Date(b.CheckDate) : new Date(0);
+        return dateB - dateA; // descending order
+      });
+
       data.forEach(item => {
         const li = document.createElement("li");
-	let formattedDate = item.CheckDate;
-	if (item.CheckDate) {
-  	const date = new Date(item.CheckDate);
-  	if (!isNaN(date)) {
-    	formattedDate = new Intl.DateTimeFormat('en-US', {
-      	year: 'numeric',
-      	month: 'long',
-      	day: '2-digit'
-    	}).format(date);
-  	}
-	}
-let formattedAmount = item.Amount;
-if (item.Amount && !isNaN(item.Amount)) {
-  formattedAmount = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(Number(item.Amount));
-}
-let dateCode = '';
-if (item.CheckDate) {
-  const date = new Date(item.CheckDate);
-  if (!isNaN(date)) {
-    const year = date.getFullYear().toString().slice(2); // Get last 2 digits of year
-    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based month
-    dateCode = `${year}${month}`; // Format as yyMM
-  }
-}let rawDV = item.DV;
-let formattedDVPart = '';
-if (rawDV != null && !isNaN(rawDV)) {
-  formattedDVPart = parseInt(rawDV).toString().padStart(6, '0');
-}
+        let formattedDate = item.CheckDate;
+        if (item.CheckDate) {
+          const date = new Date(item.CheckDate);
+          if (!isNaN(date)) {
+            formattedDate = new Intl.DateTimeFormat('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: '2-digit'
+            }).format(date);
+          }
+        }
 
-let formattedDV = rawDV; // default fallback
-if (item.Fund === "General Fund") {
-  formattedDV = `CK-100-${dateCode}-${formattedDVPart}`;
-} else if (item.Fund === "SEF") {
-  formattedDV = `CK-200-${dateCode}-${formattedDVPart}`;
-} else if (item.Fund === "Trust Fund") {
-  formattedDV = `CK-300-${dateCode}-${formattedDVPart}`;
-} else if (item.Fund === "SHF") {
-  formattedDV = `CK-400-${dateCode}-${formattedDVPart}`;
-}
-let statusColor = "";
-if (item.Status && ["For Release", "Released"].includes(item.Status.trim())) {
-  statusColor = "color: green; font-weight: bold;";
-}
-        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV }<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${item.Status || ""}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
+        let formattedAmount = item.Amount;
+        if (item.Amount && !isNaN(item.Amount)) {
+          formattedAmount = new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }).format(Number(item.Amount));
+        }
+
+        let dateCode = '';
+        if (item.CheckDate) {
+          const date = new Date(item.CheckDate);
+          if (!isNaN(date)) {
+            const year = date.getFullYear().toString().slice(2); // Get last 2 digits of year
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 0-based month
+            dateCode = `${year}${month}`; // Format as yyMM
+          }
+        }
+
+        let rawDV = item.DV;
+        let formattedDV = ''; // Default to an empty string
+        if (rawDV != null && !isNaN(rawDV)) {
+          formattedDV = parseInt(rawDV).toString().padStart(6, '0');
+        }
+
+        // Apply custom formatting based on the Fund type if DV exists
+        if (formattedDV) {
+          if (item.Fund === "General Fund") {
+            formattedDV = `CK-100-${dateCode}-${formattedDV}`;
+          } else if (item.Fund === "SEF") {
+            formattedDV = `CK-200-${dateCode}-${formattedDV}`;
+          } else if (item.Fund === "Trust Fund") {
+            formattedDV = `CK-300-${dateCode}-${formattedDV}`;
+          } else if (item.Fund === "SHF") {
+            formattedDV = `CK-400-${dateCode}-${formattedDV}`;
+          }
+        } else {
+          formattedDV = '';  // If rawDV is not provided, leave it as empty string
+        }
+
+        let statusColor = "";
+        if (item.Status && ["For Release", "Released"].includes(item.Status.trim())) {
+          statusColor = "color: green; font-weight: bold;";
+        }
+
+        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV}<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${item.Status || ""}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
       });
+
+      // Find the latest update date and display it
+      const latestDate = data.reduce((latest, item) => {
+        const currentDate = item.CheckDate ? new Date(item.CheckDate) : new Date(0);
+        return currentDate > latest ? currentDate : latest;
+      }, new Date(0));
+
+      const formattedLatestDate = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit'
+      }).format(latestDate);
+
+      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate}`;
     }
 
     // Debounce helper function
@@ -167,21 +205,21 @@ if (item.Status && ["For Release", "Released"].includes(item.Status.trim())) {
 
     // Fetch data from Google Sheets and render list
     fetch(sheetUrl)
-  .then(response => response.json())
-  .then(data => {
-    if (!Array.isArray(data)) {
-      throw new Error("Invalid data format received from the Google Apps Script");
-    }
+      .then(response => response.json())
+      .then(data => {
+        if (!Array.isArray(data)) {
+          throw new Error("Invalid data format received from the Google Apps Script");
+        }
 
-    fullData = data;
-    renderList(data);
-    document.getElementById("splash").style.display = "none";
-  })
-  .catch(error => {
-    console.error("Error loading sheet data:", error);
-    document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
-    document.getElementById("splash").style.display = "none";
-  });
+        fullData = data;
+        renderList(data);
+        document.getElementById("splash").style.display = "none";
+      })
+      .catch(error => {
+        console.error("Error loading sheet data:", error);
+        document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
+        document.getElementById("splash").style.display = "none";
+      });
 
     // Search input with debounced filtering
     const searchInput = document.getElementById("search");
