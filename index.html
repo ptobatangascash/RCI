@@ -10,6 +10,7 @@
       margin: 0;
       padding: 40px;
       max-width: 100vw;
+      padding-bottom: 60px;
     }
 
     h1, h2, h3 {
@@ -82,10 +83,16 @@
     }
 
     footer {
-      margin-top: 40px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: #f5f5f5;
       text-align: center;
       font-size: 14px;
       color: #666;
+      padding: 10px 0;
+      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
     }
   </style>
 </head>
@@ -110,8 +117,7 @@
   <!-- Footer -->
   <footer>
     <p>
-      Last repository update: <span id="last-updated">Loading...</span><br>
-      Data Size: <span id="data-size">Calculating...</span>
+      Last repository update: <span id="last-updated">Loading... | Data Size: <span id="data-size">Calculating...</span>
     </p>
   </footer>
 
