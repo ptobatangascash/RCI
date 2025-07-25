@@ -12,16 +12,11 @@
       max-width: 100vw;
     }
 
-    h1 {
+    h1, h2, h3 {
+      text-align: center;
       color: #2c3e50;
-      text-align: center;
     }
-    h2 {
-      text-align: center;
-    }
-    h3 {
-      text-align: center;
-    }
+
     input[type="text"] {
       width: 100%;
       padding: 10px;
@@ -44,7 +39,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    /* Splash screen styles */
+    /* Splash screen */
     #splash {
       position: fixed;
       top: 0;
@@ -90,6 +85,7 @@
       margin-top: 40px;
       text-align: center;
       font-size: 14px;
+      color: #666;
     }
   </style>
 </head>
@@ -103,17 +99,45 @@
 
   <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
   <h2>Provincial Treasurer's Office - Cash Division</h2>
-  <h3>Checks Issued</h3
-  <!-- Last Update Header -->
-  <div id="last-update" class="last-update">Last Update: N/A | Data Size: N/A</div>
+  <h3>Checks Issued</h3>
+
+  <!-- Last Update -->
+  <div id="last-update" class="last-update">Last Update: N/A</div>
 
   <input type="text" id="search" placeholder="Search by OBR No., Payee, Particulars...">
   <ul id="sheet-data"></ul>
 
+  <!-- Footer -->
+  <footer>
+    <p>
+      Last repository update: <span id="last-updated">Loading...</span><br>
+      Data Size: <span id="data-size">Calculating...</span>
+    </p>
+  </footer>
+
   <script>
-    const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec"; // <-- Replace with your Google Apps Script Web App URL
+    // GitHub Last Updated (repo push date)
+    (async () => {
+      const user = "ptobatangascash";
+      const repo = "rci";
+      const url = `https://api.github.com/repos/${user}/${repo}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+        const data = await res.json();
+        const pushedAt = new Date(data.pushed_at);
+        const formatted = pushedAt.toLocaleString();
+        document.getElementById("last-updated").textContent = formatted;
+      } catch (err) {
+        console.error("Failed to fetch last updated date:", err);
+        document.getElementById("last-updated").textContent = "Unavailable";
+      }
+    })();
+
+    const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
     let fullData = [];
-    let downloadSize = 0; // To hold the size of the data downloaded
+    let downloadSize = 0;
 
     function renderList(data) {
       const list = document.getElementById("sheet-data");
@@ -127,6 +151,7 @@
 
       data.forEach(item => {
         const li = document.createElement("li");
+
         let formattedDate = item.CheckDate;
         if (item.CheckDate) {
           const date = new Date(item.CheckDate);
@@ -157,7 +182,6 @@
           }
         }
 
-        // Formatted DV (Voucher Number) - blank if not available
         let rawDV = item.DV;
         let formattedDV = rawDV ? parseInt(rawDV).toString().padStart(6, '0') : '';
 
@@ -185,16 +209,13 @@
         list.appendChild(li);
       });
 
-      // Static "Last Update" upon data load
       const formattedLatestDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: '2-digit'
-      }).format(new Date()); // Use current date for "Last Update"
+      }).format(new Date());
 
-      // Update "Last Update" with the download size
-      const downloadSizeMB = formatBytes(downloadSize);
-      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate} | Data Size: ${downloadSizeMB}`;
+      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate}`;
     }
 
     function formatBytes(bytes) {
@@ -204,7 +225,6 @@
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
-    // Fetch data and calculate size when page loads
     fetch(sheetUrl)
       .then(response => response.json())
       .then(data => {
@@ -213,14 +233,11 @@
         }
 
         fullData = data;
-        
-        // Calculate and store download size only once when the data is initially loaded
-        downloadSize = new TextEncoder().encode(JSON.stringify(data)).length; // Get byte size of the JSON data
+        downloadSize = new TextEncoder().encode(JSON.stringify(data)).length;
+        const downloadSizeMB = formatBytes(downloadSize);
 
-        // Render the data
         renderList(data);
-
-        // Hide splash screen after data is loaded
+        document.getElementById("data-size").textContent = downloadSizeMB;
         document.getElementById("splash").style.display = "none";
       })
       .catch(error => {
@@ -229,7 +246,7 @@
         document.getElementById("splash").style.display = "none";
       });
 
-    // Implement search functionality
+    // Search filter with debounce
     const searchInput = document.getElementById("search");
     searchInput.addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
@@ -240,9 +257,8 @@
         (item.Nature && item.Nature.toLowerCase().includes(query))
       );
       renderList(filtered);
-    }, 300)); // 300ms debounce delay
+    }, 300));
 
-    // Debounce helper function
     function debounce(func, wait) {
       let timeout;
       return function(...args) {
