@@ -178,7 +178,7 @@
           statusColor = "color: green; font-weight: bold;";
         }
         if (item.Status && ["Check Printing Queue", "For Signature"].includes(item.Status.trim())) {
-          statusColor = "color: yellow; font-weight: bold;";
+          statusColor = "color: red; font-weight: bold;";
         }
 
         li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV}<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${item.Status || ""}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
