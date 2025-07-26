@@ -120,7 +120,6 @@
     </p>
   </footer>
 
-  <script src="https://apis.google.com/js/api.js"></script>
   <script>
     // GitHub Last Updated (repo push date)
     (async () => {
@@ -142,12 +141,6 @@
     })();
 
     const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
-    const CLIENT_ID = '886673521729-0olu0cqt676ffol6lkakim4kh1f4c0ti.apps.googleusercontent.com';
-    const API_KEY = 'AIzaSyCq2cCGZTclpBct6jIuFsSOAsOmec07Pds; // Replace this with your actual API Key
-    const SPREADSHEET_ID = '1wPU0y3wSdmSBzQbPyWQAXqMLDYxuKAd4FdYQ6WJ7d7g';
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-
-    let gapiInited = false;
     let fullData = [];
     let downloadSize = 0;
 
@@ -220,50 +213,14 @@
         li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV}<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${(item.Status || "").toUpperCase()}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
       });
-    }
 
-    // Google API Client Initialization
-    gapi.load('client:auth2', start);
+      const formattedLatestDate = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit'
+      }).format(new Date());
 
-    function start() {
-      gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        scope: SCOPES,
-        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
-      }).then(function () {
-        gapiInited = true;
-        checkAuth();
-      });
-    }
-
-    function checkAuth() {
-      gapi.auth2.getAuthInstance().isSignedIn.listen(handleAuthResult);
-      handleAuthResult(gapi.auth2.getAuthInstance().isSignedIn.get());
-    }
-
-    function handleAuthResult(isSignedIn) {
-      if (isSignedIn) {
-        getSheetMetadata();
-      } else {
-        gapi.auth2.getAuthInstance().signIn();
-      }
-    }
-
-    function getSheetMetadata() {
-      gapi.client.sheets.spreadsheets.get({
-        spreadsheetId: SPREADSHEET_ID,
-      }).then(function(response) {
-        const lastUpdated = response.result.properties.modifiedTime;
-        const formattedLastUpdated = new Date(lastUpdated);
-        const formattedDate = new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: '2-digit'
-        }).format(formattedLastUpdated);
-        
-        document.getElementById("last-update").textContent = `Last Update: ${formattedDate}`;
-      });
+      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate}`;
     }
 
     function formatBytes(bytes) {
