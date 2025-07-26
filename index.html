@@ -148,6 +148,15 @@
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
 
+      // Sort the data by CheckDate in descending order (most recent first)
+      data.sort((a, b) => {
+        const dateA = new Date(a.CheckDate);
+        const dateB = new Date(b.CheckDate);
+
+        // Sort in descending order, most recent date first
+        return dateB - dateA;
+      });
+
       let latestCheckDate = new Date(0); // Start with the earliest possible date
 
       data.forEach(item => {
@@ -224,18 +233,16 @@
       today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
 
       // Ensure latestCheckDate is not later than today
-      if (latestCheckDate >= today) {
-        latestCheckDate = today; // Reset to today if latestCheckDate is in the future
+      if (latestCheckDate > today) {
+        latestCheckDate = today;
       }
 
-      // Format the final update date
       const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
         day: '2-digit'
       }).format(latestCheckDate);
 
-      // Update the Last Update field
       document.getElementById("last-update").textContent = `Last Update: ${formattedFinalUpdateDate}`;
     }
 
