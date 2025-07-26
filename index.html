@@ -148,27 +148,31 @@
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
 
-      data.sort((a, b) => {
-        const dateA = a.CheckDate ? new Date(a.CheckDate) : new Date(0);
-        const dateB = b.CheckDate ? new Date(b.CheckDate) : new Date(0);
-        return dateB - dateA;
-      });
+      let latestCheckDate = new Date(0); // Start with the earliest possible date
 
       data.forEach(item => {
         const li = document.createElement("li");
 
- let formattedDate = item.CheckDate;
-    if (item.CheckDate) {
-      const date = new Date(item.CheckDate);
-      if (!isNaN(date)) {
-        formattedDate = new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: '2-digit'
-        }).format(date);
-        latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the latest CheckDate
-      }
-    }
+        let formattedDate = item.CheckDate;
+        if (item.CheckDate) {
+          const date = new Date(item.CheckDate);
+          if (!isNaN(date)) {
+            formattedDate = new Intl.DateTimeFormat('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: '2-digit'
+            }).format(date);
+
+            // Only update latestCheckDate if it's before today's date
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
+            
+            // Check if the date is before today (not in the future)
+            if (date < today) {
+              latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the most recent date before today
+            }
+          }
+        }
 
         let formattedAmount = item.Amount;
         if (item.Amount && !isNaN(item.Amount)) {
@@ -215,27 +219,25 @@
         list.appendChild(li);
       });
 
-// Get current date for comparison
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
+      // Format and set the "Last Update" field
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
 
-  // Check if the latestCheckDate is later than today
-  let finalUpdateDate = latestCheckDate;
-  if (latestCheckDate > today) {
-    // If the latest check date is after today, use today's date instead
-    finalUpdateDate = today;
-  }
+      // Ensure latestCheckDate is not later than today
+      if (latestCheckDate >= today) {
+        latestCheckDate = today; // Reset to today if latestCheckDate is in the future
+      }
 
-  // Format the final update date
-  const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit'
-  }).format(finalUpdateDate);
+      // Format the final update date
+      const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: '2-digit'
+      }).format(latestCheckDate);
 
-  // Update the Last Update field
-  document.getElementById("last-update").textContent = `Last Update: ${formattedFinalUpdateDate}`;
-}
+      // Update the Last Update field
+      document.getElementById("last-update").textContent = `Last Update: ${formattedFinalUpdateDate}`;
+    }
 
     function formatBytes(bytes) {
       if (bytes === 0) return '0 Bytes';
