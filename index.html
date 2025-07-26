@@ -157,17 +157,18 @@
       data.forEach(item => {
         const li = document.createElement("li");
 
-        let formattedDate = item.CheckDate;
-        if (item.CheckDate) {
-          const date = new Date(item.CheckDate);
-          if (!isNaN(date)) {
-            formattedDate = new Intl.DateTimeFormat('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: '2-digit'
-            }).format(date);
-          }
-        }
+ let formattedDate = item.CheckDate;
+    if (item.CheckDate) {
+      const date = new Date(item.CheckDate);
+      if (!isNaN(date)) {
+        formattedDate = new Intl.DateTimeFormat('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: '2-digit'
+        }).format(date);
+        latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the latest CheckDate
+      }
+    }
 
         let formattedAmount = item.Amount;
         if (item.Amount && !isNaN(item.Amount)) {
@@ -214,14 +215,27 @@
         list.appendChild(li);
       });
 
-      const formattedLatestDate = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit'
-      }).format(new Date());
+// Get current date for comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
 
-      document.getElementById("last-update").textContent = `Last Update: ${formattedLatestDate}`;
-    }
+  // Check if the latestCheckDate is later than today
+  let finalUpdateDate = latestCheckDate;
+  if (latestCheckDate > today) {
+    // If the latest check date is after today, use today's date instead
+    finalUpdateDate = today;
+  }
+
+  // Format the final update date
+  const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit'
+  }).format(finalUpdateDate);
+
+  // Update the Last Update field
+  document.getElementById("last-update").textContent = `Last Update: ${formattedFinalUpdateDate}`;
+}
 
     function formatBytes(bytes) {
       if (bytes === 0) return '0 Bytes';
