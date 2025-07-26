@@ -148,18 +148,26 @@
       const list = document.getElementById("sheet-data");
       list.innerHTML = "";
 
+      // Get today's date, set to midnight (no time component)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Filter out data where CheckDate is in the future
+      const filteredData = data.filter(item => {
+        const checkDate = new Date(item.CheckDate);
+        return checkDate <= today;  // Only include checks with dates on or before today
+      });
+
       // Sort the data by CheckDate in descending order (most recent first)
-      data.sort((a, b) => {
+      filteredData.sort((a, b) => {
         const dateA = new Date(a.CheckDate);
         const dateB = new Date(b.CheckDate);
-
-        // Sort in descending order, most recent date first
         return dateB - dateA;
       });
 
       let latestCheckDate = new Date(0); // Start with the earliest possible date
 
-      data.forEach(item => {
+      filteredData.forEach(item => {
         const li = document.createElement("li");
 
         let formattedDate = item.CheckDate;
@@ -172,11 +180,7 @@
               day: '2-digit'
             }).format(date);
 
-            // Only update latestCheckDate if it's before today's date
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
-            
-            // Check if the date is before today (not in the future)
+            // Update latestCheckDate if it's before today's date
             if (date < today) {
               latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the most recent date before today
             }
@@ -229,14 +233,6 @@
       });
 
       // Format and set the "Last Update" field
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Normalize to midnight (no time component)
-
-      // Ensure latestCheckDate is not later than today
-      if (latestCheckDate > today) {
-        latestCheckDate = today;
-      }
-
       const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
         year: 'numeric',
         month: 'long',
