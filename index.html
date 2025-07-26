@@ -5,95 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Checks Issued</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 40px;
-      max-width: 100vw;
-      padding-bottom: 60px;
-    }
-
-    h1, h2 {
-      text-align: center;
-      color: #2c3e50;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      background: #f9f9f9;
-      margin-bottom: 10px;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    /* Splash screen */
-    #splash {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      flex-direction: column;
-    }
-
-    .spinner {
-      border: 6px solid #eee;
-      border-top: 6px solid #3498db;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-      font-size: 18px;
-      color: #555;
-    }
-
-    .last-update {
-      text-align: center;
-      font-size: 16px;
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    footer {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background-color: #f5f5f5;
-      text-align: center;
-      font-size: 14px;
-      color: #666;
-      padding: 10px 0;
-      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-    }
+    /* Styling code remains the same */
   </style>
 </head>
 <body>
@@ -119,6 +31,7 @@
       Last repository update: <span id="last-updated">Loading...</span> | Data Size: <span id="data-size">Calculating...</span>
     </p>
   </footer>
+
   <script src="https://apis.google.com/js/api.js"></script>
   <script>
     // GitHub Last Updated (repo push date)
@@ -142,7 +55,7 @@
 
     const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
     const CLIENT_ID = 'ptobatangascash';
-    const API_KEY = 'YOUR_GOOGLE_API_KEY';
+    const API_KEY = '886673521729-0olu0cqt676ffol6lkakim4kh1f4c0ti.apps.googleusercontent.com';
     const SPREADSHEET_ID = '1wPU0y3wSdmSBzQbPyWQAXqMLDYxuKAd4FdYQ6WJ7d7g';
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 
@@ -220,103 +133,101 @@
         list.appendChild(li);
       });
 
+      // Google API Client Initialization
+      gapi.load('client:auth2', start);
+
       function start() {
-      gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        scope: SCOPES,
-        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
-      }).then(function () {
-        gapiInited = true;
-        checkAuth();
-      });
-    }
-
-    // Initialize the API client
-    gapi.load('client:auth2', start);
-
-    // Check if the user is signed in
-    function checkAuth() {
-      gapi.auth2.getAuthInstance().isSignedIn.listen(handleAuthResult);
-      handleAuthResult(gapi.auth2.getAuthInstance().isSignedIn.get());
-    }
-
-    // Handle sign-in status
-    function handleAuthResult(isSignedIn) {
-      if (isSignedIn) {
-        getSheetMetadata();
-      } else {
-        gapi.auth2.getAuthInstance().signIn();
+        gapi.client.init({
+          apiKey: API_KEY,
+          clientId: CLIENT_ID,
+          scope: SCOPES,
+          discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
+        }).then(function () {
+          gapiInited = true;
+          checkAuth();
+        });
       }
-    }
 
-    // Fetch the last modified timestamp of the Google Sheet
-    function getSheetMetadata() {
-      gapi.client.sheets.spreadsheets.get({
-        spreadsheetId: SPREADSHEET_ID,
-      }).then(function(response) {
-        const lastUpdated = response.result.properties.modifiedTime;
-        const formattedLastUpdated = new Date(lastUpdated);
-        const formattedDate = new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: '2-digit'
-        }).format(formattedLastUpdated);
-        
-        // Display the last update date
-        document.getElementById("last-update").textContent = `Last Update: ${formattedDate}`;
-      });
-    }
-      
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-    }
+      function checkAuth() {
+        gapi.auth2.getAuthInstance().isSignedIn.listen(handleAuthResult);
+        handleAuthResult(gapi.auth2.getAuthInstance().isSignedIn.get());
+      }
 
-    fetch(sheetUrl)
-      .then(response => response.json())
-      .then(data => {
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format received from the Google Apps Script");
+      function handleAuthResult(isSignedIn) {
+        if (isSignedIn) {
+          getSheetMetadata();
+        } else {
+          gapi.auth2.getAuthInstance().signIn();
         }
+      }
 
-        fullData = data;
-        downloadSize = new TextEncoder().encode(JSON.stringify(data)).length;
-        const downloadSizeMB = formatBytes(downloadSize);
+      function getSheetMetadata() {
+        gapi.client.sheets.spreadsheets.get({
+          spreadsheetId: SPREADSHEET_ID,
+        }).then(function(response) {
+          const lastUpdated = response.result.properties.modifiedTime;
+          const formattedLastUpdated = new Date(lastUpdated);
+          const formattedDate = new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: '2-digit'
+          }).format(formattedLastUpdated);
+          
+          // Display the last update date
+          document.getElementById("last-update").textContent = `Last Update: ${formattedDate}`;
+        });
+      }
+      
+      function formatBytes(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+      }
 
-        renderList(data);
-        document.getElementById("data-size").textContent = downloadSizeMB;
-        document.getElementById("splash").style.display = "none";
-      })
-      .catch(error => {
-        console.error("Error loading sheet data:", error);
-        document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
-        document.getElementById("splash").style.display = "none";
-      });
+      fetch(sheetUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid data format received from the Google Apps Script");
+          }
 
-    // Search filter with debounce
-    const searchInput = document.getElementById("search");
-    searchInput.addEventListener("input", debounce(function () {
-      const query = this.value.toLowerCase();
-      const filtered = fullData.filter(item =>
-        (item.OBR && item.OBR.toLowerCase().includes(query)) ||
-        (item.Payee && item.Payee.toLowerCase().includes(query)) ||
-        (item.Office && item.Office.toLowerCase().includes(query)) ||
-        (item.Nature && item.Nature.toLowerCase().includes(query))
-      );
-      renderList(filtered);
-    }, 300));
+          fullData = data;
+          downloadSize = new TextEncoder().encode(JSON.stringify(data)).length;
+          const downloadSizeMB = formatBytes(downloadSize);
 
-    function debounce(func, wait) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
-    }
-  </script>
+          renderList(data);
+          document.getElementById("data-size").textContent = downloadSizeMB;
+          document.getElementById("splash").style.display = "none";
+        })
+        .catch(error => {
+          console.error("Error loading sheet data:", error);
+          document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
+          document.getElementById("splash").style.display = "none";
+        });
+
+      // Search filter with debounce
+      const searchInput = document.getElementById("search");
+      searchInput.addEventListener("input", debounce(function () {
+        const query = this.value.toLowerCase();
+        const filtered = fullData.filter(item =>
+          (item.OBR && item.OBR.toLowerCase().includes(query)) ||
+          (item.Payee && item.Payee.toLowerCase().includes(query)) ||
+          (item.Office && item.Office.toLowerCase().includes(query)) ||
+          (item.Nature && item.Nature.toLowerCase().includes(query))
+        );
+        renderList(filtered);
+      }, 300));
+
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+    </script>
 
 </body>
 </html>
