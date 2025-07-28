@@ -181,7 +181,7 @@
             }).format(date);
 
             // Update latestCheckDate if it's before today's date
-            if (date < today) {
+            if (date <= today) {
               latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the most recent date before today
             }
           }
