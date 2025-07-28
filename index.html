@@ -108,7 +108,7 @@
   <h2>Provincial Treasurer's Office - Cash Division<br>Checks Issued</h2>
 
   <!-- Last Update -->
-  <div id="last-update" class="last-update">Last Update: N/A</div>
+  <div id="last-update" class="last-update">Latest Check Date: N/A</div>
 
   <input type="text" id="search" placeholder="Search by OBR No., Payee, Particulars...">
   <ul id="sheet-data"></ul>
@@ -239,7 +239,7 @@
         day: '2-digit'
       }).format(latestCheckDate);
 
-      document.getElementById("last-update").textContent = `Last Update: ${formattedFinalUpdateDate}`;
+      document.getElementById("last-update").textContent = `Latest Check Date: ${formattedFinalUpdateDate}`;
     }
 
     function formatBytes(bytes) {
