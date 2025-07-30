@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Checks Issued</title>
   <style>
-     body {
+    body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 40px;
@@ -39,7 +39,8 @@
       border-radius: 5px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-     footer {
+
+    footer {
       position: fixed;
       bottom: 0;
       width: 100%;
@@ -51,7 +52,7 @@
       box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
       z-index: 1000;
     }
-    /* Critical splash styles only */
+
     #splash {
       position: fixed;
       top: 0; left: 0;
@@ -64,6 +65,7 @@
       z-index: 9999;
       flex-direction: column;
     }
+
     .spinner {
       border: 6px solid #eee;
       border-top: 6px solid #3498db;
@@ -73,22 +75,24 @@
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
     }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
     .loading-text {
       font-size: 18px;
       color: #555;
     }
+
     .last-update {
       text-align: center;
       font-size: 16px;
       margin-top: 20px;
       font-weight: bold;
-    }    
+    }
   </style>
-  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -115,73 +119,85 @@
   <script>
     const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
     let fullData = [];
-let downloadSize = 0;
-let hasRenderedOnce = false; // NEW: flag to keep "Latest Check Date" static
+    let staticLatestCheckDate = null;
 
-function renderList(data) {
-  list.innerHTML = "";
-  const today = new Date(); today.setHours(0,0,0,0);
-  const filtered = data.filter(d => new Date(d.CheckDate) <= today)
-    .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-    .slice(0, 100); // Render only top 100
+    const list = document.getElementById("sheet-data");
+    const splash = document.getElementById("splash");
 
-  let latestCheckDate = new Date(0);
-
-  for (const item of filtered) {
-    const li = document.createElement("li");
-
-    const checkDate = new Date(item.CheckDate);
-    const formattedDate = isNaN(checkDate) ? item.CheckDate :
-      checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
-
-    if (checkDate <= today) {
-      latestCheckDate = new Date(Math.max(latestCheckDate, checkDate));
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
-    const formattedAmount = item.Amount && !isNaN(item.Amount)
-      ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
+    function renderList(data) {
+      list.innerHTML = "";
 
-    let dateCode = '';
-    if (!isNaN(checkDate)) {
-      const year = checkDate.getFullYear().toString().slice(2);
-      const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
-      dateCode = `${year}${month}`;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const filtered = data.filter(d => new Date(d.CheckDate) <= today)
+        .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
+        .slice(0, 100);
+
+      // Set static latest check date only once
+      if (!staticLatestCheckDate) {
+        const allDates = data
+          .map(d => new Date(d.CheckDate))
+          .filter(d => !isNaN(d) && d <= today);
+        if (allDates.length) {
+          staticLatestCheckDate = new Date(Math.max(...allDates));
+          document.getElementById("last-update").textContent =
+            `Latest Check Date: ${staticLatestCheckDate.toLocaleDateString("en-US", {
+              year: 'numeric', month: 'long', day: '2-digit'
+            })}`;
+        }
+      }
+
+      for (const item of filtered) {
+        const li = document.createElement("li");
+
+        const checkDate = new Date(item.CheckDate);
+        const formattedDate = isNaN(checkDate) ? item.CheckDate :
+          checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
+
+        const formattedAmount = item.Amount && !isNaN(item.Amount)
+          ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
+
+        let dateCode = '';
+        if (!isNaN(checkDate)) {
+          const year = checkDate.getFullYear().toString().slice(2);
+          const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
+          dateCode = `${year}${month}`;
+        }
+
+        let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
+        if (formattedDV && item.Fund) {
+          const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
+          formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
+        }
+
+        let statusColor = '';
+        const status = (item.Status || "").trim();
+        if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
+        if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
+        if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
+
+        li.innerHTML = `<strong>${item.Payee}</strong><br>
+          Date: ${formattedDate}<br>
+          Check Number: ${item.CheckNo}<br>
+          OBR No.: ${item.OBR}<br>
+          Voucher No.: ${formattedDV}<br>
+          Net Amount: ${formattedAmount}<br>
+          Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
+          Office: ${item.Office}<br>
+          Particulars: ${item.Nature}`;
+
+        list.appendChild(li);
+      }
     }
 
-    let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
-    if (formattedDV && item.Fund) {
-      const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
-      formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
-    }
-
-    let statusColor = '';
-    const status = (item.Status || "").trim();
-    if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
-    if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
-    if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
-
-    li.innerHTML = `<strong>${item.Payee}</strong><br>
-      Date: ${formattedDate}<br>
-      Check Number: ${item.CheckNo}<br>
-      OBR No.: ${item.OBR}<br>
-      Voucher No.: ${formattedDV}<br>
-      Net Amount: ${formattedAmount}<br>
-      Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
-      Office: ${item.Office}<br>
-      Particulars: ${item.Nature}`;
-
-    list.appendChild(li);
-  }
-
-  // ✅ Only update "Latest Check Date" if it's the first render
-  if (!hasRenderedOnce) {
-    document.getElementById("last-update").textContent =
-      `Latest Check Date: ${latestCheckDate.toLocaleDateString("en-US", {
-        year: 'numeric', month: 'long', day: '2-digit'
-      })}`;
-    hasRenderedOnce = true; // lock it
-  }
-}
     // Load data with caching
     (async () => {
       const cacheKey = "checkDataCache";
@@ -204,8 +220,8 @@ function renderList(data) {
           fullData = data;
           localStorage.setItem(cacheKey, JSON.stringify(data));
           if (!cache || cache !== JSON.stringify(data)) {
-          renderList(data);
-          } // only re-render if no cached version
+            renderList(data);
+          }
           document.getElementById("data-size").textContent = formatBytes(
             new TextEncoder().encode(JSON.stringify(data)).length
           );
@@ -220,7 +236,7 @@ function renderList(data) {
       }
     })();
 
-    // Debounced search
+    // Debounced search that preserves the static "Latest Check Date"
     document.getElementById("search").addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
       const filtered = fullData.filter(item =>
@@ -240,7 +256,7 @@ function renderList(data) {
       };
     }
 
-    // Defer GitHub footer info
+    // Fetch GitHub repo update info
     window.addEventListener('load', async () => {
       try {
         const res = await fetch("https://api.github.com/repos/ptobatangascash/rci");
@@ -255,3 +271,4 @@ function renderList(data) {
 
 </body>
 </html>
+
