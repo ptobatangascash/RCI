@@ -5,46 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Checks Issued</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 40px;
-      max-width: 100vw;
-      padding-bottom: 60px;
-    }
-
-    h1, h2 {
-      text-align: center;
-      color: #2c3e50;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      background: #f9f9f9;
-      margin-bottom: 10px;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    /* Splash screen */
+    /* Critical splash styles only */
     #splash {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: 100vh;
       background: #ffffff;
@@ -54,7 +18,6 @@
       z-index: 9999;
       flex-direction: column;
     }
-
     .spinner {
       border: 6px solid #eee;
       border-top: 6px solid #3498db;
@@ -64,37 +27,16 @@
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     .loading-text {
       font-size: 18px;
       color: #555;
     }
-
-    .last-update {
-      text-align: center;
-      font-size: 16px;
-      margin-top: 20px;
-      font-weight: bold;
-    }
-
-    footer {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      background-color: #f5f5f5;
-      text-align: center;
-      font-size: 14px;
-      color: #666;
-      padding: 10px 0;
-      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
-    }
   </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -107,143 +49,24 @@
   <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
   <h2>Provincial Treasurer's Office - Cash Division<br>Checks Issued</h2>
 
-  <!-- Last Update -->
   <div id="last-update" class="last-update">Latest Check Date: N/A</div>
-
-  <input type="text" id="search" placeholder="Search by OBR No., Payee, Particulars...">
+  <input type="text" id="search" placeholder="Search by OBR No., Payee, Particulars..." />
   <ul id="sheet-data"></ul>
 
-  <!-- Footer -->
   <footer>
     <p>
-      Latest build update: <span id="last-updated">Loading...</span> | Data Size: <span id="data-size">Calculating...</span>
+      Latest build update: <span id="last-updated">Loading...</span> |
+      Data Size: <span id="data-size">Calculating...</span>
     </p>
   </footer>
 
   <script>
-    // GitHub Last Updated (repo push date)
-    (async () => {
-      const user = "ptobatangascash";
-      const repo = "rci";
-      const url = `https://api.github.com/repos/${user}/${repo}`;
-
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
-        const data = await res.json();
-        const pushedAt = new Date(data.pushed_at);
-        const formatted = pushedAt.toLocaleString();
-        document.getElementById("last-updated").textContent = formatted;
-      } catch (err) {
-        console.error("Failed to fetch last updated date:", err);
-        document.getElementById("last-updated").textContent = "Unavailable";
-      }
-    })();
-
     const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
     let fullData = [];
     let downloadSize = 0;
 
-    function renderList(data) {
-      const list = document.getElementById("sheet-data");
-      list.innerHTML = "";
-
-      // Get today's date, set to midnight (no time component)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Filter out data where CheckDate is in the future
-      const filteredData = data.filter(item => {
-        const checkDate = new Date(item.CheckDate);
-        return checkDate <= today;  // Only include checks with dates on or before today
-      });
-
-      // Sort the data by CheckDate in descending order (most recent first)
-      filteredData.sort((a, b) => {
-        const dateA = new Date(a.CheckDate);
-        const dateB = new Date(b.CheckDate);
-        return dateB - dateA;
-      });
-
-      let latestCheckDate = new Date(0); // Start with the earliest possible date
-
-      filteredData.forEach(item => {
-        const li = document.createElement("li");
-
-        let formattedDate = item.CheckDate;
-        if (item.CheckDate) {
-          const date = new Date(item.CheckDate);
-          if (!isNaN(date)) {
-            formattedDate = new Intl.DateTimeFormat('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: '2-digit'
-            }).format(date);
-
-            // Update latestCheckDate if it's before today's date
-            if (date <= today) {
-              latestCheckDate = new Date(Math.max(latestCheckDate, date)); // Track the most recent date before today
-            }
-          }
-        }
-
-        let formattedAmount = item.Amount;
-        if (item.Amount && !isNaN(item.Amount)) {
-          formattedAmount = new Intl.NumberFormat('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }).format(Number(item.Amount));
-        }
-
-        let dateCode = '';
-        if (item.CheckDate) {
-          const date = new Date(item.CheckDate);
-          if (!isNaN(date)) {
-            const year = date.getFullYear().toString().slice(2);
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            dateCode = `${year}${month}`;
-          }
-        }
-
-        let rawDV = item.DV;
-        let formattedDV = rawDV ? parseInt(rawDV).toString().padStart(6, '0') : '';
-
-        if (formattedDV && item.Fund) {
-          if (item.Fund === "General Fund") {
-            formattedDV = `CK-100-${dateCode}-${formattedDV}`;
-          } else if (item.Fund === "SEF") {
-            formattedDV = `CK-200-${dateCode}-${formattedDV}`;
-          } else if (item.Fund === "Trust Fund") {
-            formattedDV = `CK-300-${dateCode}-${formattedDV}`;
-          } else if (item.Fund === "SHF") {
-            formattedDV = `CK-400-${dateCode}-${formattedDV}`;
-          }
-        }
-
-        let statusColor = "";
-        if (item.Status && ["For Release", "Released"].includes(item.Status.trim())) {
-          statusColor = "color: green; font-weight: bold;";
-        }
-        if (item.Status && ["Check Printing Queue", "For Signature"].includes(item.Status.trim())) {
-          statusColor = "color: red; font-weight: bold;";
-        }
-        if (item.Status && ["Advice Preparation"].includes(item.Status.trim())) {
-          statusColor = "color: purple; font-weight: bold;";
-        }
-
-        li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV}<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${(item.Status || "").toUpperCase()}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
-        list.appendChild(li);
-      });
-
-      // Format and set the "Last Update" field
-      const formattedFinalUpdateDate = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit'
-      }).format(latestCheckDate);
-
-      document.getElementById("last-update").textContent = `Latest Check Date: ${formattedFinalUpdateDate}`;
-    }
+    const list = document.getElementById("sheet-data");
+    const splash = document.getElementById("splash");
 
     function formatBytes(bytes) {
       if (bytes === 0) return '0 Bytes';
@@ -252,47 +75,134 @@
       return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
     }
 
-    fetch(sheetUrl)
-      .then(response => response.json())
-      .then(data => {
-        if (!Array.isArray(data)) {
-          throw new Error("Invalid data format received from the Google Apps Script");
+    function renderList(data) {
+      list.innerHTML = "";
+      const today = new Date(); today.setHours(0,0,0,0);
+      const filtered = data.filter(d => new Date(d.CheckDate) <= today)
+        .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
+        .slice(0, 20); // Render only top 20 for performance
+
+      let latestCheckDate = new Date(0);
+
+      for (const item of filtered) {
+        const li = document.createElement("li");
+
+        const checkDate = new Date(item.CheckDate);
+        const formattedDate = isNaN(checkDate) ? item.CheckDate :
+          checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
+
+        if (checkDate <= today) {
+          latestCheckDate = new Date(Math.max(latestCheckDate, checkDate));
         }
 
-        fullData = data;
-        downloadSize = new TextEncoder().encode(JSON.stringify(data)).length;
-        const downloadSizeMB = formatBytes(downloadSize);
+        const formattedAmount = item.Amount && !isNaN(item.Amount)
+          ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
 
-        renderList(data);
-        document.getElementById("data-size").textContent = downloadSizeMB;
-        document.getElementById("splash").style.display = "none";
-      })
-      .catch(error => {
-        console.error("Error loading sheet data:", error);
-        document.getElementById("sheet-data").innerHTML = "<li>Error loading data</li>";
-        document.getElementById("splash").style.display = "none";
-      });
+        let dateCode = '';
+        if (!isNaN(checkDate)) {
+          const year = checkDate.getFullYear().toString().slice(2);
+          const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
+          dateCode = `${year}${month}`;
+        }
 
-    // Search filter with debounce
-    const searchInput = document.getElementById("search");
-    searchInput.addEventListener("input", debounce(function () {
+        let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
+        if (formattedDV && item.Fund) {
+          const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
+          formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
+        }
+
+        let statusColor = '';
+        const status = (item.Status || "").trim();
+        if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
+        if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
+        if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
+
+        li.innerHTML = `<strong>${item.Payee}</strong><br>
+          Date: ${formattedDate}<br>
+          Check Number: ${item.CheckNo}<br>
+          OBR No.: ${item.OBR}<br>
+          Voucher No.: ${formattedDV}<br>
+          Net Amount: ${formattedAmount}<br>
+          Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
+          Office: ${item.Office}<br>
+          Particulars: ${item.Nature}`;
+
+        list.appendChild(li);
+      }
+
+      document.getElementById("last-update").textContent =
+        `Latest Check Date: ${latestCheckDate.toLocaleDateString("en-US", {
+          year: 'numeric', month: 'long', day: '2-digit'
+        })}`;
+    }
+
+    // Load data with caching
+    (async () => {
+      const cacheKey = "checkDataCache";
+      const cache = localStorage.getItem(cacheKey);
+
+      if (cache) {
+        fullData = JSON.parse(cache);
+        renderList(fullData);
+        splash.style.display = "none";
+        document.getElementById("data-size").textContent = formatBytes(
+          new TextEncoder().encode(cache).length
+        );
+      }
+
+      try {
+        const res = await fetch(sheetUrl);
+        const data = await res.json();
+
+        if (Array.isArray(data)) {
+          fullData = data;
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          if (!cache) renderList(data); // only re-render if no cached version
+          document.getElementById("data-size").textContent = formatBytes(
+            new TextEncoder().encode(JSON.stringify(data)).length
+          );
+        } else {
+          throw new Error("Invalid format");
+        }
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        if (!cache) list.innerHTML = "<li>Error loading data</li>";
+      } finally {
+        splash.style.display = "none";
+      }
+    })();
+
+    // Debounced search
+    document.getElementById("search").addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
       const filtered = fullData.filter(item =>
-        (item.OBR && item.OBR.toLowerCase().includes(query)) ||
-        (item.Payee && item.Payee.toLowerCase().includes(query)) ||
-        (item.Office && item.Office.toLowerCase().includes(query)) ||
-        (item.Nature && item.Nature.toLowerCase().includes(query))
+        (item.OBR || "").toLowerCase().includes(query) ||
+        (item.Payee || "").toLowerCase().includes(query) ||
+        (item.Office || "").toLowerCase().includes(query) ||
+        (item.Nature || "").toLowerCase().includes(query)
       );
       renderList(filtered);
     }, 300));
 
     function debounce(func, wait) {
       let timeout;
-      return function(...args) {
+      return function (...args) {
         clearTimeout(timeout);
         timeout = setTimeout(() => func.apply(this, args), wait);
       };
     }
+
+    // Defer GitHub footer info
+    window.addEventListener('load', async () => {
+      try {
+        const res = await fetch("https://api.github.com/repos/ptobatangascash/rci");
+        const data = await res.json();
+        const date = new Date(data.pushed_at);
+        document.getElementById("last-updated").textContent = date.toLocaleString();
+      } catch {
+        document.getElementById("last-updated").textContent = "Unavailable";
+      }
+    });
   </script>
 
 </body>
