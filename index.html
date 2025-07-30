@@ -115,79 +115,73 @@
   <script>
     const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
     let fullData = [];
-    let downloadSize = 0;
+let downloadSize = 0;
+let hasRenderedOnce = false; // NEW: flag to keep "Latest Check Date" static
 
-    const list = document.getElementById("sheet-data");
-    const splash = document.getElementById("splash");
+function renderList(data) {
+  list.innerHTML = "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  const filtered = data.filter(d => new Date(d.CheckDate) <= today)
+    .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
+    .slice(0, 100); // Render only top 100
 
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  let latestCheckDate = new Date(0);
+
+  for (const item of filtered) {
+    const li = document.createElement("li");
+
+    const checkDate = new Date(item.CheckDate);
+    const formattedDate = isNaN(checkDate) ? item.CheckDate :
+      checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
+
+    if (checkDate <= today) {
+      latestCheckDate = new Date(Math.max(latestCheckDate, checkDate));
     }
 
-    function renderList(data) {
-      list.innerHTML = "";
-      const today = new Date(); today.setHours(0,0,0,0);
-      const filtered = data.filter(d => new Date(d.CheckDate) <= today)
-        .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-        .slice(0, 100); // Render only top 100 for performance
+    const formattedAmount = item.Amount && !isNaN(item.Amount)
+      ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
 
-      let latestCheckDate = new Date(0);
-
-      for (const item of filtered) {
-        const li = document.createElement("li");
-
-        const checkDate = new Date(item.CheckDate);
-        const formattedDate = isNaN(checkDate) ? item.CheckDate :
-          checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
-
-        if (checkDate <= today) {
-          latestCheckDate = new Date(Math.max(latestCheckDate, checkDate));
-        }
-
-        const formattedAmount = item.Amount && !isNaN(item.Amount)
-          ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
-
-        let dateCode = '';
-        if (!isNaN(checkDate)) {
-          const year = checkDate.getFullYear().toString().slice(2);
-          const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
-          dateCode = `${year}${month}`;
-        }
-
-        let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
-        if (formattedDV && item.Fund) {
-          const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
-          formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
-        }
-
-        let statusColor = '';
-        const status = (item.Status || "").trim();
-        if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
-        if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
-        if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
-
-        li.innerHTML = `<strong>${item.Payee}</strong><br>
-          Date: ${formattedDate}<br>
-          Check Number: ${item.CheckNo}<br>
-          OBR No.: ${item.OBR}<br>
-          Voucher No.: ${formattedDV}<br>
-          Net Amount: ${formattedAmount}<br>
-          Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
-          Office: ${item.Office}<br>
-          Particulars: ${item.Nature}`;
-
-        list.appendChild(li);
-      }
-
-      document.getElementById("last-update").textContent =
-        `Latest Check Date: ${latestCheckDate.toLocaleDateString("en-US", {
-          year: 'numeric', month: 'long', day: '2-digit'
-        })}`;
+    let dateCode = '';
+    if (!isNaN(checkDate)) {
+      const year = checkDate.getFullYear().toString().slice(2);
+      const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
+      dateCode = `${year}${month}`;
     }
 
+    let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
+    if (formattedDV && item.Fund) {
+      const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
+      formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
+    }
+
+    let statusColor = '';
+    const status = (item.Status || "").trim();
+    if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
+    if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
+    if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
+
+    li.innerHTML = `<strong>${item.Payee}</strong><br>
+      Date: ${formattedDate}<br>
+      Check Number: ${item.CheckNo}<br>
+      OBR No.: ${item.OBR}<br>
+      Voucher No.: ${formattedDV}<br>
+      Net Amount: ${formattedAmount}<br>
+      Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
+      Office: ${item.Office}<br>
+      Particulars: ${item.Nature}`;
+
+    list.appendChild(li);
+  }
+
+  // ✅ Only update "Latest Check Date" if it's the first render
+  if (!hasRenderedOnce) {
+    document.getElementById("last-update").textContent =
+      `Latest Check Date: ${latestCheckDate.toLocaleDateString("en-US", {
+        year: 'numeric', month: 'long', day: '2-digit'
+      })}`;
+    hasRenderedOnce = true; // lock it
+  }
+}
     // Load data with caching
     (async () => {
       const cacheKey = "checkDataCache";
