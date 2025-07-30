@@ -132,7 +132,7 @@
       const today = new Date(); today.setHours(0,0,0,0);
       const filtered = data.filter(d => new Date(d.CheckDate) <= today)
         .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-        .slice(0, 20); // Render only top 20 for performance
+        .slice(0, 100); // Render only top 100 for performance
 
       let latestCheckDate = new Date(0);
 
