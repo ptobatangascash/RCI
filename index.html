@@ -209,7 +209,9 @@
         if (Array.isArray(data)) {
           fullData = data;
           localStorage.setItem(cacheKey, JSON.stringify(data));
-          if (!cache) renderList(data); // only re-render if no cached version
+          if (!cache || cache !== JSON.stringify(data)) {
+          renderList(data);
+          } // only re-render if no cached version
           document.getElementById("data-size").textContent = formatBytes(
             new TextEncoder().encode(JSON.stringify(data)).length
           );
