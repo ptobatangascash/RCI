@@ -227,9 +227,9 @@
         if (item.Status && ["Check Printing Queue", "For Signature"].includes(item.Status.trim())) {
           statusColor = "color: red; font-weight: bold;";
         }
-        if (item.Status && ["Advice Preparation"].include(item.Status.trim())) {
+        if (item.Status && ["Advice Preparation"].includes(item.Status.trim())) {
           statusColor = "color: purple; font-weight: bold;";
-          }
+        }
 
         li.innerHTML = `<strong>${item.Payee}</strong><br>Date: ${formattedDate}<br>Check Number: ${item.CheckNo}<br>OBR No.: ${item.OBR}<br>Voucher No.: ${formattedDV}<br>Net Amount: ${formattedAmount}<br>Status: <span style="${statusColor}">${(item.Status || "").toUpperCase()}</span><br>Office: ${item.Office}<br>Particulars: ${item.Nature}`;
         list.appendChild(li);
