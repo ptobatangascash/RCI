@@ -202,7 +202,12 @@
           const updatedDate = new Date(parsed.metadata.lastUpdated);
           document.getElementById("last-update").textContent =
             `Last Updated: ${updatedDate.toLocaleDateString("en-US", {
-              year: 'numeric', month: 'long', day: '2-digit'
+             year: 'numeric',
+            month: 'long',
+            day: '2-digit',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
             })}`;
         }
       }
@@ -273,3 +278,4 @@
 
 </body>
 </html>
+
