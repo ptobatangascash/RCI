@@ -105,7 +105,7 @@
   <h1>PROVINCIAL GOVERNMENT OF BATANGAS</h1>
   <h2>Provincial Treasurer's Office - Cash Division<br>Checks Issued</h2>
 
-  <div id="last-update" class="last-update">Latest Check Date: N/A</div>
+  <div id="last-update" class="last-update">Last Updated: N/A</div>
   <input type="text" id="search" placeholder="Search by OBR No., Payee, Particulars..." />
   <ul id="sheet-data"></ul>
 
@@ -117,9 +117,8 @@
   </footer>
 
   <script>
-    const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
+    const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec"; // Replace with your actual Apps Script URL
     let fullData = [];
-    let staticLatestCheckDate = null;
 
     const list = document.getElementById("sheet-data");
     const splash = document.getElementById("splash");
@@ -140,20 +139,6 @@
       const filtered = data.filter(d => new Date(d.CheckDate) <= today)
         .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
         .slice(0, 100);
-
-      // Set static latest check date only once
-      if (!staticLatestCheckDate) {
-        const allDates = data
-          .map(d => new Date(d.CheckDate))
-          .filter(d => !isNaN(d) && d <= today);
-        if (allDates.length) {
-          staticLatestCheckDate = new Date(Math.max(...allDates));
-          document.getElementById("last-update").textContent =
-            `Latest Check Date: ${staticLatestCheckDate.toLocaleDateString("en-US", {
-              year: 'numeric', month: 'long', day: '2-digit'
-            })}`;
-        }
-      }
 
       for (const item of filtered) {
         const li = document.createElement("li");
@@ -204,24 +189,41 @@
       const cache = localStorage.getItem(cacheKey);
 
       if (cache) {
-        fullData = JSON.parse(cache);
+        const parsed = JSON.parse(cache);
+        fullData = parsed.data || [];
         renderList(fullData);
         splash.style.display = "none";
+
         document.getElementById("data-size").textContent = formatBytes(
           new TextEncoder().encode(cache).length
         );
+
+        if (parsed.metadata && parsed.metadata.lastUpdated) {
+          const updatedDate = new Date(parsed.metadata.lastUpdated);
+          document.getElementById("last-update").textContent =
+            `Last Updated: ${updatedDate.toLocaleDateString("en-US", {
+              year: 'numeric', month: 'long', day: '2-digit'
+            })}`;
+        }
       }
 
       try {
         const res = await fetch(sheetUrl);
         const data = await res.json();
 
-        if (Array.isArray(data)) {
-          fullData = data;
+        if (data && Array.isArray(data.data)) {
+          fullData = data.data;
           localStorage.setItem(cacheKey, JSON.stringify(data));
-          if (!cache || cache !== JSON.stringify(data)) {
-            renderList(data);
+          renderList(fullData);
+
+          if (data.metadata && data.metadata.lastUpdated) {
+            const updatedDate = new Date(data.metadata.lastUpdated);
+            document.getElementById("last-update").textContent =
+              `Last Updated: ${updatedDate.toLocaleDateString("en-US", {
+                year: 'numeric', month: 'long', day: '2-digit'
+              })}`;
           }
+
           document.getElementById("data-size").textContent = formatBytes(
             new TextEncoder().encode(JSON.stringify(data)).length
           );
@@ -236,7 +238,7 @@
       }
     })();
 
-    // Debounced search that preserves the static "Latest Check Date"
+    // Debounced search
     document.getElementById("search").addEventListener("input", debounce(function () {
       const query = this.value.toLowerCase();
       const filtered = fullData.filter(item =>
@@ -256,7 +258,7 @@
       };
     }
 
-    // Fetch GitHub repo update info
+    // GitHub Repo Update Info
     window.addEventListener('load', async () => {
       try {
         const res = await fetch("https://api.github.com/repos/ptobatangascash/rci");
@@ -271,4 +273,3 @@
 
 </body>
 </html>
-
