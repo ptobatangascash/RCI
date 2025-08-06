@@ -191,7 +191,7 @@
       if (cache) {
         const parsed = JSON.parse(cache);
         fullData = parsed.data || [];
-        renderList(fullData);
+        // renderList(fullData);
         splash.style.display = "none";
 
         document.getElementById("data-size").textContent = formatBytes(
@@ -219,7 +219,7 @@
         if (data && Array.isArray(data.data)) {
           fullData = data.data;
           localStorage.setItem(cacheKey, JSON.stringify(data));
-          renderList(fullData);
+          // renderList(fullData);
 
           if (data.metadata && data.metadata.lastUpdated) {
             const updatedDate = new Date(data.metadata.lastUpdated);
@@ -249,16 +249,21 @@
     })();
 
     // Debounced search
-    document.getElementById("search").addEventListener("input", debounce(function () {
-      const query = this.value.toLowerCase();
+   document.getElementById("search").addEventListener("input", debounce(function () {
+      const query = this.value.toLowerCase().trim();
+
+      if (!query) {
+        list.innerHTML = ""; // Clear the list if search box is empty
+      return;
+      }
       const filtered = fullData.filter(item =>
         (item.OBR || "").toLowerCase().includes(query) ||
         (item.Payee || "").toLowerCase().includes(query) ||
         (item.Office || "").toLowerCase().includes(query) ||
         (item.Nature || "").toLowerCase().includes(query)
       );
-      renderList(filtered);
-    }, 300));
+  renderList(filtered);
+  }, 300));
 
     function debounce(func, wait) {
       let timeout;
@@ -283,5 +288,4 @@
 
 </body>
 </html>
-
 
