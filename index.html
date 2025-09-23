@@ -260,7 +260,8 @@
         (item.OBR || "").toLowerCase().includes(query) ||
         (item.Payee || "").toLowerCase().includes(query) ||
         (item.Office || "").toLowerCase().includes(query) ||
-        (item.Nature || "").toLowerCase().includes(query)
+        (item.Nature || "").toLowerCase().includes(query) ||
+        (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
       );
   renderList(filtered);
   }, 300));
