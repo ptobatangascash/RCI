@@ -138,7 +138,7 @@
 
       const filtered = data.filter(d => new Date(d.CheckDate) <= today)
         .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-        .slice(0, 100);
+        .slice(0, 1000);
 
       for (const item of filtered) {
         const li = document.createElement("li");
