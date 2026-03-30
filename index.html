@@ -167,7 +167,7 @@
         const status = (item.Status || "").trim();
         if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
         if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
-        if (["Advice Preparation"].includes(status)) statusColor = "color: purple; font-weight: bold;";
+        if (["Advice Preparation", "NGAS Encoding"].includes(status)) statusColor = "color: purple; font-weight: bold;";
 
         li.innerHTML = `<strong>${item.Payee}</strong><br>
           Date: ${formattedDate}<br>
