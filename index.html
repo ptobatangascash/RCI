@@ -185,37 +185,40 @@
     }
   }
 
-  function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
+function debounce(func, wait) {
+  let timeout;
+  return function (event) {
+    const value = event.target.value; // ✅ capture value immediately
+
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func(value); // ✅ pass value directly
+    }, wait);
+  };
+}
 
   // SEARCH FIXED
   document.getElementById("search").addEventListener(
-    "input",
-    debounce(function () {
-      const query = this.value.toLowerCase().trim();
+  "input",
+  debounce(function (query) {
+    query = query.toLowerCase().trim();
 
-      if (!query) {
-        renderList(fullData); // ✅ restore full list
-        return;
-      }
+    if (!query) {
+      renderList(fullData);
+      return;
+    }
 
-      const filtered = fullData.filter(item =>
-        (item.OBR || "").toLowerCase().includes(query) ||
-        (item.Payee || "").toLowerCase().includes(query) ||
-        (item.Office || "").toLowerCase().includes(query) ||
-        (item.Nature || "").toLowerCase().includes(query) ||
-        (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
-      );
+    const filtered = fullData.filter(item =>
+      (item.OBR || "").toLowerCase().includes(query) ||
+      (item.Payee || "").toLowerCase().includes(query) ||
+      (item.Office || "").toLowerCase().includes(query) ||
+      (item.Nature || "").toLowerCase().includes(query) ||
+      (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
+    );
 
-      renderList(filtered);
-    }, 300)
-  );
-
+    renderList(filtered);
+  }, 300)
+);
   // LOAD DATA
   (async () => {
     const cacheKey = "checkDataCache";
