@@ -264,7 +264,7 @@ searchInput.addEventListener("input", debounce(function () {
         (item.OBR || "").toLowerCase().includes(query) ||
         (item.Payee || "").toLowerCase().includes(query) ||
         (item.Office || "").toLowerCase().includes(query) ||
-        safeString(item.Payee).includes(query) ||
+        safeString(item.Nature).includes(query) ||
         (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
       );
   renderList(filtered);
