@@ -116,146 +116,94 @@
     </p>
   </footer>
 
-  <script>
-    const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec"; // Replace with your actual Apps Script URL
-    let fullData = [];
+<script>
+  const sheetUrl = "https://script.google.com/macros/s/AKfycbw0MDwN0hLe2sHbPU_XASvI8GH_4CKOTAVeW9ytPbUslPowl3v6L61P_pSfguWpH5HnNg/exec";
+  let fullData = [];
 
-    const list = document.getElementById("sheet-data");
-    const splash = document.getElementById("splash");
+  const list = document.getElementById("sheet-data");
+  const splash = document.getElementById("splash");
 
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(1024));
-      return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  }
+
+  function renderList(data) {
+    list.innerHTML = "";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const filtered = data
+      .filter(d => new Date(d.CheckDate) <= today)
+      .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
+      .slice(0, 1000);
+
+    for (const item of filtered) {
+      const li = document.createElement("li");
+
+      const checkDate = new Date(item.CheckDate);
+      const formattedDate = isNaN(checkDate)
+        ? item.CheckDate
+        : checkDate.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "2-digit",
+          });
+
+      const formattedAmount =
+        item.Amount && !isNaN(item.Amount)
+          ? Number(item.Amount).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            })
+          : item.Amount;
+
+      let statusColor = "";
+      const status = (item.Status || "").trim();
+
+      if (["For Release", "Released"].includes(status))
+        statusColor = "color: green; font-weight: bold;";
+      if (["Check Printing Queue", "For Signature"].includes(status))
+        statusColor = "color: red; font-weight: bold;";
+      if (["Advice Preparation", "NGAS Encoding"].includes(status))
+        statusColor = "color: purple; font-weight: bold;";
+
+      li.innerHTML = `
+        <strong>${item.Payee}</strong><br>
+        Date: ${formattedDate}<br>
+        Check Number: ${item.CheckNo}<br>
+        OBR No.: ${item.OBR}<br>
+        Net Amount: ${formattedAmount}<br>
+        Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
+        Office: ${item.Office}<br>
+        Particulars: ${item.Nature}
+      `;
+
+      list.appendChild(li);
     }
+  }
 
-    function renderList(data) {
-      list.innerHTML = "";
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const filtered = data.filter(d => new Date(d.CheckDate) <= today)
-        .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-        .slice(0, 1000);
-
-      for (const item of filtered) {
-        const li = document.createElement("li");
-
-        const checkDate = new Date(item.CheckDate);
-        const formattedDate = isNaN(checkDate) ? item.CheckDate :
-          checkDate.toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: '2-digit' });
-
-        const formattedAmount = item.Amount && !isNaN(item.Amount)
-          ? Number(item.Amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) : item.Amount;
-
-        let dateCode = '';
-        if (!isNaN(checkDate)) {
-          const year = checkDate.getFullYear().toString().slice(2);
-          const month = (checkDate.getMonth() + 1).toString().padStart(2, '0');
-          dateCode = `${year}${month}`;
-        }
-
-        let formattedDV = item.DV ? parseInt(item.DV).toString().padStart(6, '0') : '';
-        if (formattedDV && item.Fund) {
-          const fundCodes = { "General Fund": "100", "SEF": "200", "Trust Fund": "300", "SHF": "400" };
-          formattedDV = `CK-${fundCodes[item.Fund] || "000"}-${dateCode}-${formattedDV}`;
-        }
-
-        let statusColor = '';
-        const status = (item.Status || "").trim();
-        if (["For Release", "Released"].includes(status)) statusColor = "color: green; font-weight: bold;";
-        if (["Check Printing Queue", "For Signature"].includes(status)) statusColor = "color: red; font-weight: bold;";
-        if (["Advice Preparation", "NGAS Encoding"].includes(status)) statusColor = "color: purple; font-weight: bold;";
-
-        li.innerHTML = `<strong>${item.Payee}</strong><br>
-          Date: ${formattedDate}<br>
-          Check Number: ${item.CheckNo}<br>
-          OBR No.: ${item.OBR}<br>
-          Voucher No.: ${formattedDV}<br>
-          Net Amount: ${formattedAmount}<br>
-          Status: <span style="${statusColor}">${status.toUpperCase()}</span><br>
-          Office: ${item.Office}<br>
-          Particulars: ${item.Nature}`;
-
-        list.appendChild(li);
-      }
-    }
-
-    // Load data with caching
-    (async () => {
-      const cacheKey = "checkDataCache";
-      const cache = localStorage.getItem(cacheKey);
-
-      if (cache) {
-        const parsed = JSON.parse(cache);
-        fullData = parsed.data || [];
-        // renderList(fullData);
-        splash.style.display = "none";
-
-        document.getElementById("data-size").textContent = formatBytes(
-          new TextEncoder().encode(cache).length
-        );
-
-        if (parsed.metadata && parsed.metadata.lastUpdated) {
-          const updatedDate = new Date(parsed.metadata.lastUpdated);
-          document.getElementById("last-update").textContent =
-            `Last Updated: ${updatedDate.toLocaleDateString("en-US", {
-            year: 'numeric',
-            month: 'long',
-            day: '2-digit',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-            })}`;
-        }
-      }
-
-      try {
-        const res = await fetch(sheetUrl);
-        const data = await res.json();
-
-        if (data && Array.isArray(data.data)) {
-          fullData = data.data;
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-          // renderList(fullData);
-
-          if (data.metadata && data.metadata.lastUpdated) {
-            const updatedDate = new Date(data.metadata.lastUpdated);
-            document.getElementById("last-update").textContent =
-              `Last Updated: ${updatedDate.toLocaleDateString("en-US", {
-                year: 'numeric',
-                month: 'long',
-                day: '2-digit',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}`;
-          }
-
-          document.getElementById("data-size").textContent = formatBytes(
-            new TextEncoder().encode(JSON.stringify(data)).length
-          );
-        } else {
-          throw new Error("Invalid format");
-        }
-      } catch (err) {
-        console.error("Failed to fetch data:", err);
-        if (!cache) list.innerHTML = "<li>Error loading data</li>";
-      } finally {
-        splash.style.display = "none";
-      }
-    })();
-
-    // Debounced search
-   document.getElementById("search").addEventListener("input", debounce(function () {
+  // SEARCH FIXED
+  document.getElementById("search").addEventListener(
+    "input",
+    debounce(function () {
       const query = this.value.toLowerCase().trim();
 
       if (!query) {
-        list.innerHTML = ""; // Clear the list if search box is empty
-      return;
+        renderList(fullData); // ✅ restore full list
+        return;
       }
+
       const filtered = fullData.filter(item =>
         (item.OBR || "").toLowerCase().includes(query) ||
         (item.Payee || "").toLowerCase().includes(query) ||
@@ -263,29 +211,61 @@
         (item.Nature || "").toLowerCase().includes(query) ||
         (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
       );
-  renderList(filtered);
-  }, 300));
 
-    function debounce(func, wait) {
-      let timeout;
-      return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
+      renderList(filtered);
+    }, 300)
+  );
+
+  // LOAD DATA
+  (async () => {
+    const cacheKey = "checkDataCache";
+    const cache = localStorage.getItem(cacheKey);
+
+    if (cache) {
+      const parsed = JSON.parse(cache);
+      fullData = parsed.data || [];
+      renderList(fullData); // ✅ show cached immediately
     }
 
-    // GitHub Repo Update Info
-    window.addEventListener('load', async () => {
-      try {
-        const res = await fetch("https://api.github.com/repos/ptobatangascash/rci");
-        const data = await res.json();
-        const date = new Date(data.pushed_at);
-        document.getElementById("last-updated").textContent = date.toLocaleString();
-      } catch {
-        document.getElementById("last-updated").textContent = "Unavailable";
+    try {
+      const res = await fetch(sheetUrl);
+      const data = await res.json();
+
+      if (data && Array.isArray(data.data)) {
+        fullData = data.data;
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        renderList(fullData); // ✅ refresh with latest
+
+        document.getElementById("data-size").textContent = formatBytes(
+          new TextEncoder().encode(JSON.stringify(data)).length
+        );
+
+        if (data.metadata?.lastUpdated) {
+          const updatedDate = new Date(data.metadata.lastUpdated);
+          document.getElementById("last-update").textContent =
+            "Last Updated: " + updatedDate.toLocaleString();
+        }
       }
-    });
-  </script>
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = "<li>Error loading data</li>";
+    } finally {
+      splash.style.display = "none";
+    }
+  })();
+
+  // GitHub Info
+  window.addEventListener("load", async () => {
+    try {
+      const res = await fetch("https://api.github.com/repos/ptobatangascash/rci");
+      const data = await res.json();
+      document.getElementById("last-updated").textContent =
+        new Date(data.pushed_at).toLocaleString();
+    } catch {
+      document.getElementById("last-updated").textContent = "Unavailable";
+    }
+  });
+</script>
 
 </body>
 </html>
