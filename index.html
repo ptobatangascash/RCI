@@ -138,7 +138,7 @@
 
       const filtered = data.filter(d => new Date(d.CheckDate) <= today)
         .sort((a, b) => new Date(b.CheckDate) - new Date(a.CheckDate))
-        .slice(0, 100);
+        .slice(0, 1000);
 
       for (const item of filtered) {
         const li = document.createElement("li");
@@ -256,11 +256,13 @@
         list.innerHTML = ""; // Clear the list if search box is empty
       return;
       }
-      const filtered = fullData.filter(item =>
+     const safeString = val => (val ?? "").toString().toLowerCase();
+     
+     const filtered = fullData.filter(item =>
         (item.OBR || "").toLowerCase().includes(query) ||
         (item.Payee || "").toLowerCase().includes(query) ||
         (item.Office || "").toLowerCase().includes(query) ||
-        (item.Nature || "").toLowerCase().includes(query) ||
+        safeString(item.Payee).includes(query) ||
         (item.CheckNo ? item.CheckNo.toString().includes(query) : false)
       );
   renderList(filtered);
