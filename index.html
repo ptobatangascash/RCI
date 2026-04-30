@@ -249,8 +249,8 @@
     })();
 
     // Debounced search
-   document.getElementById("search").addEventListener("input", debounce(function () {
-      const query = this.value.toLowerCase().trim();
+   document.getElementById("search").addEventListener("input", debounce(function (e) {
+      const query = e.value.toLowerCase().trim();
 
       if (!query) {
         list.innerHTML = ""; // Clear the list if search box is empty
@@ -270,9 +270,9 @@
 
     function debounce(func, wait) {
       let timeout;
-      return function (...args) {
+      return (...args)  => {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(() => func(...args), wait);
       };
     }
 
