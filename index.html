@@ -249,8 +249,10 @@
     })();
 
     // Debounced search
-   document.getElementById("search").addEventListener("input", debounce(function (e) {
-      const query = e.value.toLowerCase().trim();
+const searchInput = document.getElementById("search");
+
+searchInput.addEventListener("input", debounce(function () {
+  const query = searchInput.value.toLowerCase().trim();
 
       if (!query) {
         list.innerHTML = ""; // Clear the list if search box is empty
